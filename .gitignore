@@ -1,4 +1,8 @@
+# IDE stuff
+.idea/
+
 # Binaries for programs and plugins
+debuggo
 *.exe
 *.exe~
 *.dll
