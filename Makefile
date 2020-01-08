@@ -8,10 +8,10 @@ debuggo: go.mod go.sum $(wildcard *.go **/*.go)
 vet:
 	go vet ./...
 
-test: vet generate
+test: vet
 	go test ./...
 
-coverage.txt: vet generate go.mod go.sum
+coverage.txt: vet go.mod go.sum
 	go test ./... -race -coverprofile=$@ -covermode=atomic
 
 clean:
