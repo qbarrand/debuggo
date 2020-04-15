@@ -83,14 +83,13 @@ func strace(c *cli.Context) error {
 			origRax, err := readOrigRax(childPid)
 			if err != nil {
 				log.WithField("pid", childPid).Error("Error while reading Orig_rax for child process")
+				return err
 			}
 			log.WithField("orig_rax", origRax).Info("Got value of Orig_rax (syscall id)")
 		}
 
 		traps++
 	}
-
-	return nil
 }
 
 func waitPid(pid int) (syscall.WaitStatus, error) {
