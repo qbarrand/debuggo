@@ -80,66 +80,74 @@ func strace(c *cli.Context) error {
 		// Print register values on every second trap so that we print only after the syscall is complete
 		if traps > 0 && traps%2 == 0 {
 			var regs syscall.PtraceRegs
-			err = syscall.PtraceGetRegs(childPid, &regs)
-			if err != nil {
+			if err = syscall.PtraceGetRegs(childPid, &regs); err != nil {
 				return fmt.Errorf("error while reading Orig_rax for child pid %d: %w ", childPid, err)
 			}
 
-			// Syscall-related data is stored in a number of registers, namely:
-			// - rax (system call number)
-			// - rdi (first arg)
-			// - rsi (second arg)
-			// - rdx (third arg)
-			// - r10 (fourth arg)
-			// - r8 (fifth arg)
-			// - r9 (sixth arg)
-			// For each syscall, we need to hardcode which arguments are of interest
-			// Hence, for educational purposes, only selected syscalls have been
-			// defined (i.e. are recognized) below. The list can grow over time.
-			syscallName := syscallNameByRax[regs.Orig_rax]
-
-			switch syscallName {
-
-			case "openat":
-				dirfd := regs.Rdi
-				path, err := peekText(childPid, uintptr(regs.Rsi))
-				flags := regs.Rdx
-				if err != nil {
-					return fmt.Errorf("error while reading path text for child pid %d: %w", childPid, err)
-				}
-				fmt.Printf("openat(%d, '%s', %d)\n", dirfd, string(path), flags)
-			case "open":
-				path, err := peekText(childPid, uintptr(regs.Rdi))
-				if err != nil {
-					return fmt.Errorf("error while reading path text for child pid %d: %w", childPid, err)
-				}
-				flags := regs.Rsi
-				fmt.Printf("open('%s', %d)\n", path, flags)
-			case "read":
-				fd := regs.Rdi
-				buf := regs.Rsi
-				count := regs.Rdx
-				fmt.Printf("read(%d, %d, %d)\n", fd, buf, count)
-			case "write":
-				fd := regs.Rdi
-				text, err := peekText(childPid, uintptr(regs.Rsi))
-				if err != nil {
-					return fmt.Errorf("error while reading path text for child pid %d: %w", childPid, err)
-				}
-				nbytes := regs.Rdx
-				fmt.Printf("write(%d, '%s', %d)\n", fd, text, nbytes)
-			case "close":
-				fd := regs.Rdi
-				fmt.Printf("close(%d)\n", fd)
-			default:
-				// Print out syscall(n/a) as indication that we cannot parse paramters
-				fmt.Printf("%s(n/a)\n", syscallName)
+			if err = printSyscall(childPid, regs); err != nil {
+				return fmt.Errorf("error while printing syscall for child pid %d: %w", childPid, err)
 			}
 
 		}
 
 		traps++
 	}
+}
+
+// Prints syscall info in a manner similar to strace
+func printSyscall(childPid int, regs syscall.PtraceRegs) error {
+	// Syscall-related data is stored in a number of registers, namely:
+	// - rax (system call number)
+	// - rdi (first arg)
+	// - rsi (second arg)
+	// - rdx (third arg)
+	// - r10 (fourth arg)
+	// - r8 (fifth arg)
+	// - r9 (sixth arg)
+	// For each syscall, we need to hardcode which arguments are of interest
+	// Hence, for educational purposes, only selected syscalls have been
+	// defined (i.e. are recognized) below. The list can grow over time.
+	syscallName := syscallNameByRax[regs.Orig_rax]
+
+	switch syscallName {
+
+	case "openat":
+		dirfd := regs.Rdi
+		path, err := peekText(childPid, uintptr(regs.Rsi))
+		flags := regs.Rdx
+		if err != nil {
+			return fmt.Errorf("error while reading path text for child pid %d: %w", childPid, err)
+		}
+		fmt.Printf("openat(%d, '%s', %d)\n", dirfd, string(path), flags)
+	case "open":
+		path, err := peekText(childPid, uintptr(regs.Rdi))
+		if err != nil {
+			return fmt.Errorf("error while reading path text for child pid %d: %w", childPid, err)
+		}
+		flags := regs.Rsi
+		fmt.Printf("open('%s', %d)\n", path, flags)
+	case "read":
+		fd := regs.Rdi
+		buf := regs.Rsi
+		count := regs.Rdx
+		fmt.Printf("read(%d, %d, %d)\n", fd, buf, count)
+	case "write":
+		fd := regs.Rdi
+		text, err := peekText(childPid, uintptr(regs.Rsi))
+		if err != nil {
+			return fmt.Errorf("error while reading path text for child pid %d: %w", childPid, err)
+		}
+		nbytes := regs.Rdx
+		fmt.Printf("write(%d, '%s', %d)\n", fd, text, nbytes)
+	case "close":
+		fd := regs.Rdi
+		fmt.Printf("close(%d)\n", fd)
+	default:
+		// Print out syscall(n/a) as indication that we cannot parse parameters
+		fmt.Printf("%s(n/a)\n", syscallName)
+	}
+
+	return nil
 }
 
 // Reads text from another process' memory
