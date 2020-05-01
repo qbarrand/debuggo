@@ -12,6 +12,5 @@ var debugCommand = &cli.Command{
 }
 
 func dbg(c *cli.Context) error {
-	d := debug.NewDebugger()
-	return d.Loop()
+	return debug.NewDebugger().Loop()
 }
