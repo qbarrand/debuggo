@@ -13,6 +13,7 @@ func CLI() *cli.App {
 	}
 	app.Commands = []*cli.Command{
 		straceCommand,
+		debugCommand,
 	}
 
 	return app
