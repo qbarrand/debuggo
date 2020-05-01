@@ -8,10 +8,10 @@ import (
 var debugCommand = &cli.Command{
 	Name:   "debug",
 	Usage:  "Debug a program in a manner similar to gdb",
-	Action: db,
+	Action: dbg,
 }
 
-func db(c *cli.Context) error {
+func dbg(c *cli.Context) error {
 	d := debug.NewDebugger()
 	return d.Loop()
 }

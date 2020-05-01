@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const PROMPT string = "dbg> "
+const prompt = "dbg> "
 
 type cmdHandler func(c *cmdContext) error
 
@@ -26,7 +26,6 @@ type debugger struct {
 	// Store commands both in slice and map to avoid
 	// iterating ove map each time we need the commands
 	// e.g. to display help
-	cmds         []string
 	cmdToHandler map[string]cmdHandler
 }
 
@@ -45,7 +44,6 @@ func NewDebugger() Debugger {
 }
 
 func (d *debugger) registerCmd(name string, handler cmdHandler) {
-	d.cmds = append(d.cmds, name)
 	d.cmdToHandler[name] = handler
 }
 
@@ -55,7 +53,7 @@ func (d *debugger) Loop() error {
 	fmt.Println()
 
 	for {
-		fmt.Printf(PROMPT)
+		fmt.Printf(prompt)
 		line, _, err := reader.ReadLine()
 		if err != nil {
 			return err
